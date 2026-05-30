@@ -1,0 +1,8 @@
+effects:
+  - id: "github.issue.comment"
+    output:
+      commentId: "stub-github-issue-comment-commentId"
+      url: "https://example.test/github/issue/comment"
+  - id: "github.issue.label"
+    output:
+      ok: true

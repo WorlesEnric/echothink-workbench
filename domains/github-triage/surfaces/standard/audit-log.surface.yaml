@@ -1,0 +1,168 @@
+actions:
+  auditedProcesses:
+    - actorType: human
+      audit:
+        level: always
+        reasonRequired: false
+      effects: []
+      emits:
+        - issue.assigned
+      id: issue.assign
+      input:
+        - kind: string
+          label: "Issue Id"
+          name: issueId
+          optional: false
+        - kind: string
+          label: Assignee
+          name: assignee
+          optional: false
+      output: []
+      permission: issue.assign
+      policyClass: side_effect_low
+      preconditions:
+        - "Issue.state in [triaged]"
+      reads:
+        - Issue
+      transitions:
+        - entity: Issue
+          field: state
+          from: triaged
+          kind: exact
+          target: Issue.state
+          to: assigned
+      writes:
+        - Issue
+    - actorType: human
+      audit:
+        level: always
+        reasonRequired: false
+      effects:
+        - github.issue.comment
+      emits: []
+      id: issue.comment
+      input:
+        - kind: string
+          label: "Issue Id"
+          name: issueId
+          optional: false
+        - kind: string
+          label: Body
+          name: body
+          optional: false
+      output: []
+      permission: issue.comment
+      policyClass: side_effect_high
+      preconditions: []
+      reads:
+        - Issue
+      transitions: []
+      writes: []
+    - actorType: human
+      audit:
+        level: always
+        reasonRequired: true
+      effects: []
+      emits:
+        - issue.triaged
+      id: issue.triage
+      input:
+        - kind: string
+          label: "Issue Id"
+          name: issueId
+          optional: false
+        - enumValues:
+            - low
+            - medium
+            - high
+            - urgent
+          kind: enum
+          label: Priority
+          name: priority
+          optional: false
+        - arrayOf: string
+          kind: string
+          label: Labels
+          name: labels
+          optional: false
+      output: []
+      permission: issue.triage
+      policyClass: side_effect_low
+      preconditions:
+        - "Issue.state in [open]"
+      reads:
+        - Issue
+      transitions:
+        - entity: Issue
+          field: state
+          from: open
+          kind: exact
+          target: Issue.state
+          to: triaged
+      writes:
+        - Issue
+apiVersion: echothink.ai/standard-surface/v1
+bindings:
+  auditColumns:
+    - kind: date
+      name: timestamp
+    - kind: string
+      name: actorId
+    - kind: string
+      name: target
+    - kind: string
+      name: operation
+    - kind: string
+      name: reason
+  entity:
+    audit:
+      read: sampled
+      write: always
+    key: issue
+    name: Issue
+    stateField: state
+    stateMachine:
+      initial: open
+      transitions:
+        - from: open
+          to: triaged
+          via: issue.triage
+        - from: triaged
+          to: assigned
+          via: issue.assign
+        - from: assigned
+          to: closed
+    tenantScope: organization
+  events:
+    - issue.assigned
+    - issue.triaged
+imports:
+  - import: AppPageLayout
+    package: "@echothink-ui/layouts"
+    style: "@echothink-ui/layouts/styles.css"
+  - import: PageHeader
+    package: "@echothink-ui/layouts"
+    style: "@echothink-ui/layouts/styles.css"
+  - import: AuditLogTable
+    package: "@echothink-ui/data"
+    style: "@echothink-ui/data/styles.css"
+kind: StandardSurface
+metadata:
+  domainId: github-triage
+  id: audit-log
+  route: /github/audit
+  surfaceType: standard
+  title: "Audit Log"
+  uiRegistryVersion: "2026.05"
+requiredPermissions:
+  - issue.read
+template:
+  component:
+    import: AuditLogTable
+    package: "@echothink-ui/data"
+  id: AuditLog
+  layout:
+    imports:
+      - AppPageLayout
+      - PageHeader
+    package: "@echothink-ui/layouts"

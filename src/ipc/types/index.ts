@@ -40,6 +40,7 @@ export { systemContracts, systemEvents } from "./system";
 export { versionContracts } from "./version";
 export { languageModelContracts } from "./language-model";
 export { promptContracts } from "./prompts";
+export { echothinkContracts } from "./echothink";
 export { templateContracts } from "./templates";
 export { proposalContracts } from "./proposals";
 export { importContracts } from "./import";
@@ -75,6 +76,7 @@ export { systemClient, systemEventClient } from "./system";
 export { versionClient } from "./version";
 export { languageModelClient } from "./language-model";
 export { promptClient } from "./prompts";
+export { echothinkClient } from "./echothink";
 export { templateClient } from "./templates";
 export { proposalClient } from "./proposals";
 export { importClient } from "./import";
@@ -255,6 +257,37 @@ export type {
   UpdatePromptParamsDto,
 } from "./prompts";
 
+// Echothink types
+export type {
+  DomainSummary,
+  DomainDetail,
+  DomainValidationSummary,
+  SaveManifestResult,
+  CompileManifestResult,
+  PreviewStartResult,
+  UiRegistryList,
+  HarnessRunResult,
+  AppDomainManifest,
+  CapabilityMap,
+  CompiledManifest,
+  PermissionMatrixRow,
+  SemanticDiagnostic,
+  SurfaceRegistration,
+  SdkRequest,
+  SdkResponse,
+  RegistryComponent,
+  RegistryRecipe,
+  SurfaceTemplate,
+  ChangeKind,
+  PromotionEvidence,
+  RegistryRecord,
+  ReleaseManifest,
+  GateId,
+  ValidationReport,
+  ApprovalRole,
+  PromotionState,
+} from "./echothink";
+
 // Template types
 export type {
   Template,
@@ -389,6 +422,7 @@ import { systemClient, systemEventClient } from "./system";
 import { versionClient } from "./version";
 import { languageModelClient } from "./language-model";
 import { promptClient } from "./prompts";
+import { echothinkClient } from "./echothink";
 import { templateClient } from "./templates";
 import { proposalClient } from "./proposals";
 import { importClient } from "./import";
@@ -450,6 +484,7 @@ export const ipc = {
   version: versionClient,
   languageModel: languageModelClient,
   prompt: promptClient,
+  echothink: echothinkClient,
   template: templateClient,
   proposal: proposalClient,
   import: importClient,

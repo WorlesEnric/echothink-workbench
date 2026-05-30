@@ -1,0 +1,266 @@
+apiVersion: echothink.ai/v1
+kind: AppDomain
+
+metadata:
+  id: github-triage
+  name: GitHub Triage
+  owner: platform-workflows
+  version: 0.4.0
+  sdkContractVersion: "1.2"
+  uiRegistryVersion: "2026.05"
+  description: >-
+    Triage incoming GitHub issues: prioritize, label, assign, and comment back to
+    GitHub through governed unit processes.
+
+identity:
+  roles:
+    - id: admin
+      name: Administrator
+      assignable: true
+    - id: triage_lead
+      name: Triage Lead
+      assignable: true
+    - id: reviewer
+      name: Reviewer
+      assignable: true
+    - id: viewer
+      name: Viewer
+      assignable: true
+  personas:
+    - id: alice-admin
+      role: admin
+      tenantId: org_456
+      label: Alice (Admin)
+    - id: rob-reviewer
+      role: reviewer
+      tenantId: org_456
+      label: Rob (Reviewer)
+    - id: vic-viewer
+      role: viewer
+      tenantId: org_456
+      label: Vic (Viewer)
+    - id: invalid-tenant
+      role: reviewer
+      tenantId: org_999
+      label: Wrong Tenant
+      invalid: true
+
+entities:
+  Issue:
+    key: issue
+    tenantScope: organization
+    stateField: state
+    schema:
+      id: string
+      repo: string
+      title: string
+      state:
+        enum: [open, triaged, assigned, closed]
+      labels:
+        type: string[]
+      assignee:
+        type: string
+        optional: true
+      priority:
+        enum: [low, medium, high, urgent]
+      createdAt: date
+    stateMachine:
+      initial: open
+      transitions:
+        - from: open
+          to: triaged
+          via: issue.triage
+        - from: triaged
+          to: assigned
+          via: issue.assign
+        - from: assigned
+          to: closed
+    audit:
+      read: sampled
+      write: always
+
+queries:
+  issue.openQueue:
+    entity: Issue
+    filter:
+      state: open
+    sortableBy: [priority, createdAt]
+    pageable: true
+    permissions:
+      read: issue.read
+
+permissions:
+  - id: issue.read
+    roles: [admin, triage_lead, reviewer, viewer]
+  - id: issue.triage
+    roles: [admin, triage_lead, reviewer]
+  - id: issue.assign
+    roles: [admin, triage_lead]
+  - id: issue.comment
+    roles: [admin, triage_lead, reviewer]
+
+unitProcesses:
+  issue.triage:
+    actorType: human
+    policyClass: side_effect_low
+    input:
+      issueId: string
+      priority: enum(low, medium, high, urgent)
+      labels: string[]
+    requires:
+      permission: issue.triage
+    reads:
+      - Issue
+    writes:
+      - Issue
+    preconditions:
+      - Issue.state in [open]
+    transitions:
+      Issue.state:
+        from: open
+        to: triaged
+    emits:
+      - issue.triaged
+    audit:
+      level: always
+      reasonRequired: true
+
+  issue.assign:
+    actorType: human
+    policyClass: side_effect_low
+    input:
+      issueId: string
+      assignee: string
+    requires:
+      permission: issue.assign
+    reads:
+      - Issue
+    writes:
+      - Issue
+    preconditions:
+      - Issue.state in [triaged]
+    transitions:
+      Issue.state:
+        from: triaged
+        to: assigned
+    emits:
+      - issue.assigned
+    audit:
+      level: always
+      reasonRequired: false
+
+  issue.comment:
+    actorType: human
+    policyClass: side_effect_high
+    input:
+      issueId: string
+      body: string
+    requires:
+      permission: issue.comment
+    reads:
+      - Issue
+    effects:
+      - github.issue.comment
+    audit:
+      level: always
+      reasonRequired: false
+
+events:
+  issue.triaged:
+    payload:
+      issueId: string
+      priority: string
+      actorId: string
+  issue.assigned:
+    payload:
+      issueId: string
+      assignee: string
+      actorId: string
+
+effects:
+  github.issue.comment:
+    owner: integrations-platform
+    version: "1.7.2"
+    input:
+      repo: string
+      issueNumber: number
+      body: string
+    output:
+      commentId: string
+      url: string
+    requiredPermission: issue.comment
+    secretRef: github.installation.token
+    egress:
+      allowHosts: [api.github.com]
+    audit:
+      redact: [input.body]
+      level: always
+    idempotency:
+      key: issueId + processRunId
+    environments: [preview, staging, production]
+  github.issue.label:
+    owner: integrations-platform
+    version: "1.4.0"
+    input:
+      repo: string
+      issueNumber: number
+      labels: string[]
+    requiredPermission: issue.triage
+    secretRef: github.installation.token
+    egress:
+      allowHosts: [api.github.com]
+    environments: [preview, staging, production]
+
+surfaces:
+  - id: issues-admin
+    type: standard
+    route: /github/issues
+    page: EntityTable
+    query: issue.openQueue
+    requiredPermissions: [issue.read]
+
+  - id: issue-detail
+    type: standard
+    route: /github/issues/:id
+    page: EntityDetail
+    requiredPermissions: [issue.read]
+
+  - id: triage-form
+    type: standard
+    route: /github/triage-form
+    page: EntityForm
+    requiredPermissions: [issue.read, issue.triage]
+
+  - id: audit-log
+    type: standard
+    route: /github/audit
+    page: AuditLog
+    requiredPermissions: [issue.read]
+
+  - id: approval-queue
+    type: standard
+    route: /github/approvals
+    page: ApprovalQueue
+    requiredPermissions: [issue.read, issue.triage]
+
+  - id: triage-console
+    type: composed
+    route: /github/triage
+    entry: surfaces/composed/triage-console/index.tsx
+    requiredPermissions: [issue.read, issue.triage]
+    allowedImports:
+      - "@echothink/app-domain-sdk"
+      - "@echothink/app-domain-sdk/react"
+      - "@echothink-ui/core"
+      - "@echothink-ui/data"
+      - "@echothink-ui/layouts"
+      - "@echothink-ui/task"
+      - "@tanstack/react-query"
+      - "react"
+
+release:
+  channel: candidate
+  requiredApprovals:
+    - domain-owner
+    - platform-architect
+    - security-if-effects-changed

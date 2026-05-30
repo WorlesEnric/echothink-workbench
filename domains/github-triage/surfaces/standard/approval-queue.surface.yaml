@@ -1,0 +1,104 @@
+actions:
+  decisions:
+    - actorType: human
+      audit:
+        level: always
+        reasonRequired: true
+      effects: []
+      emits:
+        - issue.triaged
+      id: issue.triage
+      input:
+        - kind: string
+          label: "Issue Id"
+          name: issueId
+          optional: false
+        - enumValues:
+            - low
+            - medium
+            - high
+            - urgent
+          kind: enum
+          label: Priority
+          name: priority
+          optional: false
+        - arrayOf: string
+          kind: string
+          label: Labels
+          name: labels
+          optional: false
+      output: []
+      permission: issue.triage
+      policyClass: side_effect_low
+      preconditions:
+        - "Issue.state in [open]"
+      reads:
+        - Issue
+      transitions:
+        - entity: Issue
+          field: state
+          from: open
+          kind: exact
+          target: Issue.state
+          to: triaged
+      writes:
+        - Issue
+apiVersion: echothink.ai/standard-surface/v1
+bindings:
+  entity:
+    audit:
+      read: sampled
+      write: always
+    key: issue
+    name: Issue
+    stateField: state
+    stateMachine:
+      initial: open
+      transitions:
+        - from: open
+          to: triaged
+          via: issue.triage
+        - from: triaged
+          to: assigned
+          via: issue.assign
+        - from: assigned
+          to: closed
+    tenantScope: organization
+  queue:
+    processIds:
+      - issue.triage
+    source: unitProcesses
+imports:
+  - import: AppPageLayout
+    package: "@echothink-ui/layouts"
+    style: "@echothink-ui/layouts/styles.css"
+  - import: PageHeader
+    package: "@echothink-ui/layouts"
+    style: "@echothink-ui/layouts/styles.css"
+  - import: TaskApprovalPanel
+    package: "@echothink-ui/task"
+    style: "@echothink-ui/task/styles.css"
+  - import: DecisionRequiredPanel
+    package: "@echothink-ui/task"
+    style: "@echothink-ui/task/styles.css"
+kind: StandardSurface
+metadata:
+  domainId: github-triage
+  id: approval-queue
+  route: /github/approvals
+  surfaceType: standard
+  title: "Approval Queue"
+  uiRegistryVersion: "2026.05"
+requiredPermissions:
+  - issue.read
+  - issue.triage
+template:
+  component:
+    import: TaskApprovalPanel
+    package: "@echothink-ui/task"
+  id: ApprovalQueue
+  layout:
+    imports:
+      - AppPageLayout
+      - PageHeader
+    package: "@echothink-ui/layouts"

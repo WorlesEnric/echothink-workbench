@@ -1,0 +1,32 @@
+{
+  "name": "@echothink/surface-factory",
+  "version": "0.1.0",
+  "description": "Standard-surface factory: compiles manifest surface registrations into Echothink-UI standard surfaces using the ui-registry page templates.",
+  "type": "module",
+  "license": "MIT",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist", "src", "README.md"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@echothink/domain-manifest": "file:../domain-manifest",
+    "@echothink/shared-types": "file:../shared-types",
+    "@echothink/ui-registry": "file:../ui-registry"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.8.3",
+    "vitest": "^3.1.1"
+  }
+}

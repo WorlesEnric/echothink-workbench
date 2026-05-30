@@ -7,7 +7,7 @@ export type AppSidebarHoverState =
 
 export type AppSidebarPanel = "Apps" | "Settings" | "Library";
 
-export type AppSidebarItemTitle = AppSidebarPanel | "Hub";
+export type AppSidebarItemTitle = AppSidebarPanel | "Hub" | "Workbench";
 
 export function getRouteSidebarPanel(pathname: string): AppSidebarPanel | null {
   if (
@@ -81,6 +81,9 @@ export function isSidebarItemActive({
   }
   if (title === "Library") {
     return pathname.startsWith("/library");
+  }
+  if (title === "Workbench") {
+    return pathname.startsWith("/workbench");
   }
   return pathname.startsWith("/hub");
 }

@@ -1,0 +1,10 @@
+{
+  "surfaceId": "triage-console",
+  "viewport": "desktop",
+  "capturedStates": [
+    "default",
+    "empty",
+    "error"
+  ],
+  "hash": "sha256:3c94f51098a7f79598a458a4fd19a20b4028be3ec9e4995be820548febd6184f"
+}

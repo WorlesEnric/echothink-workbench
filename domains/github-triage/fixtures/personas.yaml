@@ -1,0 +1,18 @@
+personas:
+  - id: "alice-admin"
+    role: "admin"
+    tenantId: "org_456"
+    label: "Alice (Admin)"
+  - id: "rob-reviewer"
+    role: "reviewer"
+    tenantId: "org_456"
+    label: "Rob (Reviewer)"
+  - id: "vic-viewer"
+    role: "viewer"
+    tenantId: "org_456"
+    label: "Vic (Viewer)"
+  - id: "invalid-tenant"
+    role: "reviewer"
+    tenantId: "org_999"
+    label: "Wrong Tenant"
+    invalid: true

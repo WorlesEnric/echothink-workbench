@@ -1,0 +1,31 @@
+{
+  "name": "@echothink/ui-registry",
+  "version": "0.1.0",
+  "description": "Sidecar registry of @echothink-ui components, blocks, page templates and recipes; maps manifest page types to Echothink-UI surface templates for the standard-surface factory and the registry browser.",
+  "type": "module",
+  "license": "MIT",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist", "src", "README.md"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@echothink/domain-manifest": "file:../domain-manifest",
+    "@echothink/shared-types": "file:../shared-types"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.8.3",
+    "vitest": "^3.1.1"
+  }
+}

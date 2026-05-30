@@ -1,0 +1,36 @@
+{
+  "name": "@echothink/app-domain-runtime",
+  "version": "0.1.0",
+  "description": "The App-Domain Runtime — the production authority that enforces identity, permissions, entity access, unit-process execution, state transitions, events, audit, effects, and release guards. Includes the preview runtime for the workbench.",
+  "type": "module",
+  "license": "MIT",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./preview": {
+      "types": "./dist/preview/index.d.ts",
+      "import": "./dist/preview/index.js"
+    }
+  },
+  "files": ["dist", "src", "README.md"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@echothink/app-domain-sdk": "file:../app-domain-sdk",
+    "@echothink/domain-manifest": "file:../domain-manifest",
+    "@echothink/shared-types": "file:../shared-types"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.8.3",
+    "vitest": "^3.1.1"
+  }
+}

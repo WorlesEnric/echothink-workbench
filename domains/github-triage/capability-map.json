@@ -1,0 +1,22 @@
+{
+  "entities": [
+    "entity.query:Issue",
+    "entity.get:Issue"
+  ],
+  "queries": [
+    "query:issue.openQueue"
+  ],
+  "processes": [
+    "process.run:issue.triage",
+    "process.run:issue.assign",
+    "process.run:issue.comment"
+  ],
+  "events": [
+    "event.subscribe:issue.triaged",
+    "event.subscribe:issue.assigned"
+  ],
+  "effects": [
+    "effect:github.issue.comment",
+    "effect:github.issue.label"
+  ]
+}

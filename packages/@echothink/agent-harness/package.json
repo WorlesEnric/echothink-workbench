@@ -1,0 +1,31 @@
+{
+  "name": "@echothink/agent-harness",
+  "version": "0.1.0",
+  "description": "Controlled Codex patch worker: file-scope policy, command allowlist, network policy, patch collection, run logs, and the generate→typecheck→build→test→validate→repair loop. Codex may propose and repair code but cannot bypass governance.",
+  "type": "module",
+  "license": "MIT",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist", "src", "README.md"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@echothink/shared-types": "file:../shared-types",
+    "@echothink/validation": "file:../validation"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.8.3",
+    "vitest": "^3.1.1"
+  }
+}

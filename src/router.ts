@@ -11,6 +11,8 @@ import { appsRoute } from "./routes/apps";
 import { themesRoute } from "./routes/themes";
 import { promptsRoute } from "./routes/prompts";
 import { mediaRoute } from "./routes/media";
+import { workbenchRoute } from "./routes/workbench";
+import { workbenchDomainRoute } from "./routes/workbench-domain";
 
 const routeTree = rootRoute.addChildren([
   homeRoute,
@@ -20,6 +22,8 @@ const routeTree = rootRoute.addChildren([
   themesRoute,
   promptsRoute,
   mediaRoute,
+  workbenchRoute,
+  workbenchDomainRoute,
   chatRoute,
   appDetailsRoute,
   settingsRoute.addChildren([providerSettingsRoute]),

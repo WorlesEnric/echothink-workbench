@@ -3,6 +3,7 @@ import { integer, sqliteTable, text, unique } from "drizzle-orm/sqlite-core";
 import { relations } from "drizzle-orm";
 import type { ModelMessage } from "ai";
 import type { StoredChatMode } from "@/lib/schemas";
+import type { ApprovalRole, PromotionState } from "@echothink/shared-types";
 
 export const AI_MESSAGES_SDK_VERSION = "ai@v6" as const;
 
@@ -317,3 +318,110 @@ export const customThemes = sqliteTable("custom_themes", {
     .notNull()
     .default(sql`(unixepoch())`),
 });
+
+export const appDomains = sqliteTable("app_domains", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  owner: text("owner"),
+  brief: text("brief"),
+  manifestYaml: text("manifest_yaml"),
+  status: text("status").$type<PromotionState>().notNull().default("draft"),
+  activeVersion: text("active_version"),
+  workspacePath: text("workspace_path").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .default(sql`(unixepoch())`),
+  updatedAt: integer("updated_at", { mode: "timestamp" })
+    .notNull()
+    .default(sql`(unixepoch())`),
+});
+
+export const domainValidationRuns = sqliteTable("domain_validation_runs", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  domainId: text("domain_id")
+    .notNull()
+    .references(() => appDomains.id, { onDelete: "cascade" }),
+  runId: text("run_id").notNull(),
+  overall: text("overall", { enum: ["pass", "fail"] }).notNull(),
+  reportJson: text("report_json").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .default(sql`(unixepoch())`),
+});
+
+export const domainReleases = sqliteTable(
+  "domain_releases",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    domainId: text("domain_id")
+      .notNull()
+      .references(() => appDomains.id, { onDelete: "cascade" }),
+    version: text("version").notNull(),
+    state: text("state").$type<PromotionState>().notNull(),
+    releaseManifestJson: text("release_manifest_json").notNull(),
+    createdAt: integer("created_at", { mode: "timestamp" })
+      .notNull()
+      .default(sql`(unixepoch())`),
+  },
+  (table) => [
+    unique("domain_releases_domain_version_unique").on(
+      table.domainId,
+      table.version,
+    ),
+  ],
+);
+
+export const domainApprovals = sqliteTable("domain_approvals", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  domainId: text("domain_id")
+    .notNull()
+    .references(() => appDomains.id, { onDelete: "cascade" }),
+  version: text("version").notNull(),
+  role: text("role").$type<ApprovalRole>().notNull(),
+  user: text("user").notNull(),
+  approvedAt: integer("approved_at", { mode: "timestamp" })
+    .notNull()
+    .default(sql`(unixepoch())`),
+});
+
+export const appDomainsRelations = relations(appDomains, ({ many }) => ({
+  validationRuns: many(domainValidationRuns),
+  releases: many(domainReleases),
+  approvals: many(domainApprovals),
+}));
+
+export const domainValidationRunsRelations = relations(
+  domainValidationRuns,
+  ({ one }) => ({
+    domain: one(appDomains, {
+      fields: [domainValidationRuns.domainId],
+      references: [appDomains.id],
+    }),
+  }),
+);
+
+export const domainReleasesRelations = relations(domainReleases, ({ one }) => ({
+  domain: one(appDomains, {
+    fields: [domainReleases.domainId],
+    references: [appDomains.id],
+  }),
+}));
+
+export const domainApprovalsRelations = relations(
+  domainApprovals,
+  ({ one }) => ({
+    domain: one(appDomains, {
+      fields: [domainApprovals.domainId],
+      references: [appDomains.id],
+    }),
+  }),
+);
+
+export type AppDomain = typeof appDomains.$inferSelect;
+export type NewAppDomain = typeof appDomains.$inferInsert;
+export type DomainValidationRun = typeof domainValidationRuns.$inferSelect;
+export type NewDomainValidationRun = typeof domainValidationRuns.$inferInsert;
+export type DomainRelease = typeof domainReleases.$inferSelect;
+export type NewDomainRelease = typeof domainReleases.$inferInsert;
+export type DomainApproval = typeof domainApprovals.$inferSelect;
+export type NewDomainApproval = typeof domainApprovals.$inferInsert;

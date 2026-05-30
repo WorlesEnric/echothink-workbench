@@ -1,0 +1,988 @@
+{
+  "capabilityMap": {
+    "effects": [
+      "effect:github.issue.comment",
+      "effect:github.issue.label"
+    ],
+    "entities": [
+      "entity.query:Issue",
+      "entity.get:Issue"
+    ],
+    "events": [
+      "event.subscribe:issue.triaged",
+      "event.subscribe:issue.assigned"
+    ],
+    "processes": [
+      "process.run:issue.triage",
+      "process.run:issue.assign",
+      "process.run:issue.comment"
+    ],
+    "queries": [
+      "query:issue.openQueue"
+    ]
+  },
+  "compiledAt": "2026-05-29T18:00:00.000Z",
+  "lockfileVersion": 1,
+  "manifest": {
+    "apiVersion": "echothink.ai/v1",
+    "effects": {
+      "github.issue.comment": {
+        "audit": {
+          "level": "always",
+          "redact": [
+            "input.body"
+          ]
+        },
+        "egress": {
+          "allowHosts": [
+            "api.github.com"
+          ]
+        },
+        "environments": [
+          "preview",
+          "staging",
+          "production"
+        ],
+        "idempotency": {
+          "key": "issueId + processRunId"
+        },
+        "input": {
+          "body": "string",
+          "issueNumber": "number",
+          "repo": "string"
+        },
+        "output": {
+          "commentId": "string",
+          "url": "string"
+        },
+        "owner": "integrations-platform",
+        "requiredPermission": "issue.comment",
+        "secretRef": "github.installation.token",
+        "version": "1.7.2"
+      },
+      "github.issue.label": {
+        "egress": {
+          "allowHosts": [
+            "api.github.com"
+          ]
+        },
+        "environments": [
+          "preview",
+          "staging",
+          "production"
+        ],
+        "input": {
+          "issueNumber": "number",
+          "labels": "string[]",
+          "repo": "string"
+        },
+        "owner": "integrations-platform",
+        "requiredPermission": "issue.triage",
+        "secretRef": "github.installation.token",
+        "version": "1.4.0"
+      }
+    },
+    "entities": {
+      "Issue": {
+        "audit": {
+          "read": "sampled",
+          "write": "always"
+        },
+        "key": "issue",
+        "schema": {
+          "assignee": {
+            "optional": true,
+            "type": "string"
+          },
+          "createdAt": "date",
+          "id": "string",
+          "labels": {
+            "type": "string[]"
+          },
+          "priority": {
+            "enum": [
+              "low",
+              "medium",
+              "high",
+              "urgent"
+            ]
+          },
+          "repo": "string",
+          "state": {
+            "enum": [
+              "open",
+              "triaged",
+              "assigned",
+              "closed"
+            ]
+          },
+          "title": "string"
+        },
+        "stateField": "state",
+        "stateMachine": {
+          "initial": "open",
+          "transitions": [
+            {
+              "from": "open",
+              "to": "triaged",
+              "via": "issue.triage"
+            },
+            {
+              "from": "triaged",
+              "to": "assigned",
+              "via": "issue.assign"
+            },
+            {
+              "from": "assigned",
+              "to": "closed"
+            }
+          ]
+        },
+        "tenantScope": "organization"
+      }
+    },
+    "events": {
+      "issue.assigned": {
+        "payload": {
+          "actorId": "string",
+          "assignee": "string",
+          "issueId": "string"
+        }
+      },
+      "issue.triaged": {
+        "payload": {
+          "actorId": "string",
+          "issueId": "string",
+          "priority": "string"
+        }
+      }
+    },
+    "identity": {
+      "personas": [
+        {
+          "id": "alice-admin",
+          "label": "Alice (Admin)",
+          "role": "admin",
+          "tenantId": "org_456"
+        },
+        {
+          "id": "rob-reviewer",
+          "label": "Rob (Reviewer)",
+          "role": "reviewer",
+          "tenantId": "org_456"
+        },
+        {
+          "id": "vic-viewer",
+          "label": "Vic (Viewer)",
+          "role": "viewer",
+          "tenantId": "org_456"
+        },
+        {
+          "id": "invalid-tenant",
+          "invalid": true,
+          "label": "Wrong Tenant",
+          "role": "reviewer",
+          "tenantId": "org_999"
+        }
+      ],
+      "roles": [
+        {
+          "assignable": true,
+          "id": "admin",
+          "name": "Administrator"
+        },
+        {
+          "assignable": true,
+          "id": "triage_lead",
+          "name": "Triage Lead"
+        },
+        {
+          "assignable": true,
+          "id": "reviewer",
+          "name": "Reviewer"
+        },
+        {
+          "assignable": true,
+          "id": "viewer",
+          "name": "Viewer"
+        }
+      ]
+    },
+    "kind": "AppDomain",
+    "metadata": {
+      "description": "Triage incoming GitHub issues: prioritize, label, assign, and comment back to GitHub through governed unit processes.",
+      "id": "github-triage",
+      "name": "GitHub Triage",
+      "owner": "platform-workflows",
+      "sdkContractVersion": "1.2",
+      "uiRegistryVersion": "2026.05",
+      "version": "0.4.0"
+    },
+    "permissions": [
+      {
+        "id": "issue.read",
+        "roles": [
+          "admin",
+          "triage_lead",
+          "reviewer",
+          "viewer"
+        ]
+      },
+      {
+        "id": "issue.triage",
+        "roles": [
+          "admin",
+          "triage_lead",
+          "reviewer"
+        ]
+      },
+      {
+        "id": "issue.assign",
+        "roles": [
+          "admin",
+          "triage_lead"
+        ]
+      },
+      {
+        "id": "issue.comment",
+        "roles": [
+          "admin",
+          "triage_lead",
+          "reviewer"
+        ]
+      }
+    ],
+    "queries": {
+      "issue.openQueue": {
+        "entity": "Issue",
+        "filter": {
+          "state": "open"
+        },
+        "pageable": true,
+        "permissions": {
+          "read": "issue.read"
+        },
+        "sortableBy": [
+          "priority",
+          "createdAt"
+        ]
+      }
+    },
+    "release": {
+      "channel": "candidate",
+      "requiredApprovals": [
+        "domain-owner",
+        "platform-architect",
+        "security-if-effects-changed"
+      ]
+    },
+    "surfaces": [
+      {
+        "id": "issues-admin",
+        "page": "EntityTable",
+        "query": "issue.openQueue",
+        "requiredPermissions": [
+          "issue.read"
+        ],
+        "route": "/github/issues",
+        "type": "standard"
+      },
+      {
+        "id": "issue-detail",
+        "page": "EntityDetail",
+        "requiredPermissions": [
+          "issue.read"
+        ],
+        "route": "/github/issues/:id",
+        "type": "standard"
+      },
+      {
+        "id": "triage-form",
+        "page": "EntityForm",
+        "requiredPermissions": [
+          "issue.read",
+          "issue.triage"
+        ],
+        "route": "/github/triage-form",
+        "type": "standard"
+      },
+      {
+        "id": "audit-log",
+        "page": "AuditLog",
+        "requiredPermissions": [
+          "issue.read"
+        ],
+        "route": "/github/audit",
+        "type": "standard"
+      },
+      {
+        "id": "approval-queue",
+        "page": "ApprovalQueue",
+        "requiredPermissions": [
+          "issue.read",
+          "issue.triage"
+        ],
+        "route": "/github/approvals",
+        "type": "standard"
+      },
+      {
+        "allowedImports": [
+          "@echothink/app-domain-sdk",
+          "@echothink/app-domain-sdk/react",
+          "@echothink-ui/core",
+          "@echothink-ui/data",
+          "@echothink-ui/layouts",
+          "@echothink-ui/task",
+          "@tanstack/react-query",
+          "react"
+        ],
+        "entry": "surfaces/composed/triage-console/index.tsx",
+        "id": "triage-console",
+        "requiredPermissions": [
+          "issue.read",
+          "issue.triage"
+        ],
+        "route": "/github/triage",
+        "type": "composed"
+      }
+    ],
+    "unitProcesses": {
+      "issue.assign": {
+        "actorType": "human",
+        "audit": {
+          "level": "always",
+          "reasonRequired": false
+        },
+        "emits": [
+          "issue.assigned"
+        ],
+        "input": {
+          "assignee": "string",
+          "issueId": "string"
+        },
+        "policyClass": "side_effect_low",
+        "preconditions": [
+          "Issue.state in [triaged]"
+        ],
+        "reads": [
+          "Issue"
+        ],
+        "requires": {
+          "permission": "issue.assign"
+        },
+        "transitions": {
+          "Issue.state": {
+            "from": "triaged",
+            "to": "assigned"
+          }
+        },
+        "writes": [
+          "Issue"
+        ]
+      },
+      "issue.comment": {
+        "actorType": "human",
+        "audit": {
+          "level": "always",
+          "reasonRequired": false
+        },
+        "effects": [
+          "github.issue.comment"
+        ],
+        "input": {
+          "body": "string",
+          "issueId": "string"
+        },
+        "policyClass": "side_effect_high",
+        "reads": [
+          "Issue"
+        ],
+        "requires": {
+          "permission": "issue.comment"
+        }
+      },
+      "issue.triage": {
+        "actorType": "human",
+        "audit": {
+          "level": "always",
+          "reasonRequired": true
+        },
+        "emits": [
+          "issue.triaged"
+        ],
+        "input": {
+          "issueId": "string",
+          "labels": "string[]",
+          "priority": "enum(low, medium, high, urgent)"
+        },
+        "policyClass": "side_effect_low",
+        "preconditions": [
+          "Issue.state in [open]"
+        ],
+        "reads": [
+          "Issue"
+        ],
+        "requires": {
+          "permission": "issue.triage"
+        },
+        "transitions": {
+          "Issue.state": {
+            "from": "open",
+            "to": "triaged"
+          }
+        },
+        "writes": [
+          "Issue"
+        ]
+      }
+    }
+  },
+  "manifestDigest": "sha256:9270e12cfcd1ccdd0765c24ca7d33b37ffa5ce5963bc535bb55e9d186f23f432",
+  "normalizedEntities": [
+    {
+      "audit": {
+        "read": "sampled",
+        "write": "always"
+      },
+      "fields": [
+        {
+          "kind": "string",
+          "name": "id",
+          "optional": false
+        },
+        {
+          "kind": "string",
+          "name": "repo",
+          "optional": false
+        },
+        {
+          "kind": "string",
+          "name": "title",
+          "optional": false
+        },
+        {
+          "enumValues": [
+            "open",
+            "triaged",
+            "assigned",
+            "closed"
+          ],
+          "kind": "enum",
+          "name": "state",
+          "optional": false
+        },
+        {
+          "arrayOf": "string",
+          "kind": "string",
+          "name": "labels",
+          "optional": false
+        },
+        {
+          "kind": "string",
+          "name": "assignee",
+          "optional": true
+        },
+        {
+          "enumValues": [
+            "low",
+            "medium",
+            "high",
+            "urgent"
+          ],
+          "kind": "enum",
+          "name": "priority",
+          "optional": false
+        },
+        {
+          "kind": "date",
+          "name": "createdAt",
+          "optional": false
+        }
+      ],
+      "key": "issue",
+      "name": "Issue",
+      "stateField": "state",
+      "stateMachine": {
+        "initial": "open",
+        "transitions": [
+          {
+            "from": "open",
+            "to": "triaged",
+            "via": "issue.triage"
+          },
+          {
+            "from": "triaged",
+            "to": "assigned",
+            "via": "issue.assign"
+          },
+          {
+            "from": "assigned",
+            "to": "closed"
+          }
+        ]
+      },
+      "tenantScope": "organization"
+    }
+  ],
+  "normalizedProcesses": [
+    {
+      "actorType": "human",
+      "audit": {
+        "level": "always",
+        "reasonRequired": true
+      },
+      "effects": [],
+      "emits": [
+        "issue.triaged"
+      ],
+      "id": "issue.triage",
+      "input": [
+        {
+          "kind": "string",
+          "name": "issueId",
+          "optional": false
+        },
+        {
+          "enumValues": [
+            "low",
+            "medium",
+            "high",
+            "urgent"
+          ],
+          "kind": "enum",
+          "name": "priority",
+          "optional": false
+        },
+        {
+          "arrayOf": "string",
+          "kind": "string",
+          "name": "labels",
+          "optional": false
+        }
+      ],
+      "output": [],
+      "policyClass": "side_effect_low",
+      "preconditions": [
+        "Issue.state in [open]"
+      ],
+      "reads": [
+        "Issue"
+      ],
+      "requires": {
+        "permission": "issue.triage"
+      },
+      "transitions": [
+        {
+          "entity": "Issue",
+          "field": "state",
+          "from": "open",
+          "kind": "exact",
+          "target": "Issue.state",
+          "to": "triaged"
+        }
+      ],
+      "writes": [
+        "Issue"
+      ]
+    },
+    {
+      "actorType": "human",
+      "audit": {
+        "level": "always",
+        "reasonRequired": false
+      },
+      "effects": [],
+      "emits": [
+        "issue.assigned"
+      ],
+      "id": "issue.assign",
+      "input": [
+        {
+          "kind": "string",
+          "name": "issueId",
+          "optional": false
+        },
+        {
+          "kind": "string",
+          "name": "assignee",
+          "optional": false
+        }
+      ],
+      "output": [],
+      "policyClass": "side_effect_low",
+      "preconditions": [
+        "Issue.state in [triaged]"
+      ],
+      "reads": [
+        "Issue"
+      ],
+      "requires": {
+        "permission": "issue.assign"
+      },
+      "transitions": [
+        {
+          "entity": "Issue",
+          "field": "state",
+          "from": "triaged",
+          "kind": "exact",
+          "target": "Issue.state",
+          "to": "assigned"
+        }
+      ],
+      "writes": [
+        "Issue"
+      ]
+    },
+    {
+      "actorType": "human",
+      "audit": {
+        "level": "always",
+        "reasonRequired": false
+      },
+      "effects": [
+        "github.issue.comment"
+      ],
+      "emits": [],
+      "id": "issue.comment",
+      "input": [
+        {
+          "kind": "string",
+          "name": "issueId",
+          "optional": false
+        },
+        {
+          "kind": "string",
+          "name": "body",
+          "optional": false
+        }
+      ],
+      "output": [],
+      "policyClass": "side_effect_high",
+      "preconditions": [],
+      "reads": [
+        "Issue"
+      ],
+      "requires": {
+        "permission": "issue.comment"
+      },
+      "transitions": [],
+      "writes": []
+    }
+  ],
+  "permissionMatrix": [
+    {
+      "allowed": true,
+      "capability": "process.run",
+      "permission": "issue.triage",
+      "role": "admin",
+      "target": "issue.triage"
+    },
+    {
+      "allowed": true,
+      "capability": "process.run",
+      "permission": "issue.triage",
+      "role": "triage_lead",
+      "target": "issue.triage"
+    },
+    {
+      "allowed": true,
+      "capability": "process.run",
+      "permission": "issue.triage",
+      "role": "reviewer",
+      "target": "issue.triage"
+    },
+    {
+      "allowed": false,
+      "capability": "process.run",
+      "permission": "issue.triage",
+      "role": "viewer",
+      "target": "issue.triage"
+    },
+    {
+      "allowed": true,
+      "capability": "process.run",
+      "permission": "issue.assign",
+      "role": "admin",
+      "target": "issue.assign"
+    },
+    {
+      "allowed": true,
+      "capability": "process.run",
+      "permission": "issue.assign",
+      "role": "triage_lead",
+      "target": "issue.assign"
+    },
+    {
+      "allowed": false,
+      "capability": "process.run",
+      "permission": "issue.assign",
+      "role": "reviewer",
+      "target": "issue.assign"
+    },
+    {
+      "allowed": false,
+      "capability": "process.run",
+      "permission": "issue.assign",
+      "role": "viewer",
+      "target": "issue.assign"
+    },
+    {
+      "allowed": true,
+      "capability": "process.run",
+      "permission": "issue.comment",
+      "role": "admin",
+      "target": "issue.comment"
+    },
+    {
+      "allowed": true,
+      "capability": "process.run",
+      "permission": "issue.comment",
+      "role": "triage_lead",
+      "target": "issue.comment"
+    },
+    {
+      "allowed": true,
+      "capability": "process.run",
+      "permission": "issue.comment",
+      "role": "reviewer",
+      "target": "issue.comment"
+    },
+    {
+      "allowed": false,
+      "capability": "process.run",
+      "permission": "issue.comment",
+      "role": "viewer",
+      "target": "issue.comment"
+    },
+    {
+      "allowed": true,
+      "capability": "entity.query",
+      "permission": "issue.read",
+      "role": "admin",
+      "target": "issue.openQueue"
+    },
+    {
+      "allowed": true,
+      "capability": "entity.query",
+      "permission": "issue.read",
+      "role": "triage_lead",
+      "target": "issue.openQueue"
+    },
+    {
+      "allowed": true,
+      "capability": "entity.query",
+      "permission": "issue.read",
+      "role": "reviewer",
+      "target": "issue.openQueue"
+    },
+    {
+      "allowed": true,
+      "capability": "entity.query",
+      "permission": "issue.read",
+      "role": "viewer",
+      "target": "issue.openQueue"
+    },
+    {
+      "allowed": true,
+      "capability": "entity.get",
+      "permission": "issue.read",
+      "role": "admin",
+      "target": "Issue"
+    },
+    {
+      "allowed": true,
+      "capability": "entity.get",
+      "permission": "issue.read",
+      "role": "triage_lead",
+      "target": "Issue"
+    },
+    {
+      "allowed": true,
+      "capability": "entity.get",
+      "permission": "issue.read",
+      "role": "reviewer",
+      "target": "Issue"
+    },
+    {
+      "allowed": true,
+      "capability": "entity.get",
+      "permission": "issue.read",
+      "role": "viewer",
+      "target": "Issue"
+    },
+    {
+      "allowed": true,
+      "capability": "event.subscribe",
+      "role": "admin",
+      "target": "issue.triaged"
+    },
+    {
+      "allowed": true,
+      "capability": "event.subscribe",
+      "role": "triage_lead",
+      "target": "issue.triaged"
+    },
+    {
+      "allowed": true,
+      "capability": "event.subscribe",
+      "role": "reviewer",
+      "target": "issue.triaged"
+    },
+    {
+      "allowed": true,
+      "capability": "event.subscribe",
+      "role": "viewer",
+      "target": "issue.triaged"
+    },
+    {
+      "allowed": true,
+      "capability": "event.subscribe",
+      "role": "admin",
+      "target": "issue.assigned"
+    },
+    {
+      "allowed": true,
+      "capability": "event.subscribe",
+      "role": "triage_lead",
+      "target": "issue.assigned"
+    },
+    {
+      "allowed": true,
+      "capability": "event.subscribe",
+      "role": "reviewer",
+      "target": "issue.assigned"
+    },
+    {
+      "allowed": true,
+      "capability": "event.subscribe",
+      "role": "viewer",
+      "target": "issue.assigned"
+    },
+    {
+      "allowed": true,
+      "capability": "effect.invoke",
+      "permission": "issue.comment",
+      "role": "admin",
+      "target": "github.issue.comment"
+    },
+    {
+      "allowed": true,
+      "capability": "effect.invoke",
+      "permission": "issue.comment",
+      "role": "triage_lead",
+      "target": "github.issue.comment"
+    },
+    {
+      "allowed": true,
+      "capability": "effect.invoke",
+      "permission": "issue.comment",
+      "role": "reviewer",
+      "target": "github.issue.comment"
+    },
+    {
+      "allowed": false,
+      "capability": "effect.invoke",
+      "permission": "issue.comment",
+      "role": "viewer",
+      "target": "github.issue.comment"
+    },
+    {
+      "allowed": true,
+      "capability": "effect.invoke",
+      "permission": "issue.triage",
+      "role": "admin",
+      "target": "github.issue.label"
+    },
+    {
+      "allowed": true,
+      "capability": "effect.invoke",
+      "permission": "issue.triage",
+      "role": "triage_lead",
+      "target": "github.issue.label"
+    },
+    {
+      "allowed": true,
+      "capability": "effect.invoke",
+      "permission": "issue.triage",
+      "role": "reviewer",
+      "target": "github.issue.label"
+    },
+    {
+      "allowed": false,
+      "capability": "effect.invoke",
+      "permission": "issue.triage",
+      "role": "viewer",
+      "target": "github.issue.label"
+    }
+  ],
+  "surfaceRegistrations": [
+    {
+      "id": "issues-admin",
+      "page": "EntityTable",
+      "query": "issue.openQueue",
+      "requiredPermissions": [
+        "issue.read"
+      ],
+      "route": "/github/issues",
+      "type": "standard"
+    },
+    {
+      "id": "issue-detail",
+      "page": "EntityDetail",
+      "requiredPermissions": [
+        "issue.read"
+      ],
+      "route": "/github/issues/:id",
+      "type": "standard"
+    },
+    {
+      "id": "triage-form",
+      "page": "EntityForm",
+      "requiredPermissions": [
+        "issue.read",
+        "issue.triage"
+      ],
+      "route": "/github/triage-form",
+      "type": "standard"
+    },
+    {
+      "id": "audit-log",
+      "page": "AuditLog",
+      "requiredPermissions": [
+        "issue.read"
+      ],
+      "route": "/github/audit",
+      "type": "standard"
+    },
+    {
+      "id": "approval-queue",
+      "page": "ApprovalQueue",
+      "requiredPermissions": [
+        "issue.read",
+        "issue.triage"
+      ],
+      "route": "/github/approvals",
+      "type": "standard"
+    },
+    {
+      "allowedImports": [
+        "@echothink/app-domain-sdk",
+        "@echothink/app-domain-sdk/react",
+        "@echothink-ui/core",
+        "@echothink-ui/data",
+        "@echothink-ui/layouts",
+        "@echothink-ui/task",
+        "@tanstack/react-query",
+        "react"
+      ],
+      "entry": "surfaces/composed/triage-console/index.tsx",
+      "id": "triage-console",
+      "requiredPermissions": [
+        "issue.read",
+        "issue.triage"
+      ],
+      "route": "/github/triage",
+      "type": "composed"
+    }
+  ]
+}

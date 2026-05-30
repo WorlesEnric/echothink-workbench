@@ -28,6 +28,7 @@ import { systemContracts, systemEvents } from "../types/system";
 import { versionContracts } from "../types/version";
 import { languageModelContracts } from "../types/language-model";
 import { promptContracts } from "../types/prompts";
+import { echothinkContracts } from "../types/echothink";
 import { templateContracts } from "../types/templates";
 import { proposalContracts } from "../types/proposals";
 import { importContracts } from "../types/import";
@@ -93,6 +94,7 @@ export const VALID_INVOKE_CHANNELS = [
   ...getInvokeChannels(versionContracts),
   ...getInvokeChannels(languageModelContracts),
   ...getInvokeChannels(promptContracts),
+  ...getInvokeChannels(echothinkContracts),
   ...getInvokeChannels(templateContracts),
   ...getInvokeChannels(proposalContracts),
   ...getInvokeChannels(importContracts),

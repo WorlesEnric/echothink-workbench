@@ -212,6 +212,42 @@ export const queryKeys = {
   },
 
   // ─────────────────────────────────────────────────────────────────────────────
+  // Echothink Workbench
+  // ─────────────────────────────────────────────────────────────────────────────
+  echothink: {
+    all: ["echothink"] as const,
+    domains: ["echothink", "domains"] as const,
+    domain: ({ domainId }: { domainId: string | null }) =>
+      ["echothink", "domain", domainId] as const,
+    generatedArtifacts: ({ domainId }: { domainId: string | null }) =>
+      ["echothink", "generated-artifacts", domainId] as const,
+    validation: ({ domainId }: { domainId: string | null }) =>
+      ["echothink", "validation", domainId] as const,
+    previewStart: ({ domainId }: { domainId: string | null }) =>
+      ["echothink", "preview", "start", domainId] as const,
+    previewInspect: ({ domainId }: { domainId: string | null }) =>
+      ["echothink", "preview", "inspect", domainId] as const,
+    uiRegistryList: ["echothink", "ui-registry", "list"] as const,
+    uiRegistrySearch: ({
+      text,
+      kind,
+      surfaceType,
+    }: {
+      text: string;
+      kind: string;
+      surfaceType: string;
+    }) =>
+      ["echothink", "ui-registry", "search", text, kind, surfaceType] as const,
+    registry: ({ domainId }: { domainId: string | null }) =>
+      ["echothink", "registry", domainId] as const,
+    registryList: ["echothink", "registry", "list"] as const,
+    release: ({ domainId }: { domainId: string | null }) =>
+      ["echothink", "release", domainId] as const,
+    harness: ({ domainId }: { domainId: string | null }) =>
+      ["echothink", "harness", domainId] as const,
+  },
+
+  // ─────────────────────────────────────────────────────────────────────────────
   // Prompts
   // ─────────────────────────────────────────────────────────────────────────────
   prompts: {
@@ -411,6 +447,7 @@ export type AppQueryKey =
       (typeof queryKeys.customThemes)[keyof typeof queryKeys.customThemes]
     >
   | QueryKeyOf<(typeof queryKeys.templates)[keyof typeof queryKeys.templates]>
+  | QueryKeyOf<(typeof queryKeys.echothink)[keyof typeof queryKeys.echothink]>
   | QueryKeyOf<(typeof queryKeys.prompts)[keyof typeof queryKeys.prompts]>
   | QueryKeyOf<(typeof queryKeys.agentTools)[keyof typeof queryKeys.agentTools]>
   | QueryKeyOf<

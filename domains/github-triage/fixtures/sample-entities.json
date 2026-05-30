@@ -1,0 +1,42 @@
+{
+  "Issue": [
+    {
+      "tenantId": "org_456",
+      "id": "issue-1",
+      "repo": "dyad-sh/dyad",
+      "title": "Issue 1",
+      "state": "open",
+      "labels": [],
+      "assignee": null,
+      "priority": "low",
+      "createdAt": "2026-05-01T00:00:00.000Z"
+    },
+    {
+      "tenantId": "org_456",
+      "id": "issue-2",
+      "repo": "dyad-sh/dyad",
+      "title": "Issue 2",
+      "state": "triaged",
+      "labels": [
+        "bug"
+      ],
+      "assignee": null,
+      "priority": "medium",
+      "createdAt": "2026-05-02T00:00:00.000Z"
+    },
+    {
+      "tenantId": "org_456",
+      "id": "issue-3",
+      "repo": "dyad-sh/dyad",
+      "title": "Issue 3",
+      "state": "assigned",
+      "labels": [
+        "bug",
+        "support"
+      ],
+      "assignee": "triage-lead",
+      "priority": "high",
+      "createdAt": "2026-05-03T00:00:00.000Z"
+    }
+  ]
+}

@@ -5,6 +5,7 @@ import {
   HelpCircle,
   Store,
   BookOpen,
+  Workflow,
 } from "lucide-react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useSidebar } from "@/components/ui/sidebar"; // import useSidebar hook
@@ -61,6 +62,11 @@ const items = [
     title: "Hub",
     to: "/hub",
     icon: Store,
+  },
+  {
+    title: "Workbench",
+    to: "/workbench",
+    icon: Workflow,
   },
 ] satisfies Array<{
   title: AppSidebarItemTitle;
